@@ -19,6 +19,23 @@ using code = vision::code;
 
 competition Competition;
 brain Brain;
+// Autonomous mode selection
+enum AutoMode { LEFT = 0, LEFT_CENTER = 1, RIGHT_CENTER = 2, RIGHT = 3 };
+int autoMode = 0;
+const char* autoModeNames[] = {"Left", "Left Center", "Right Center", "Right"};
+
+void onScreenPressed() {
+  autoMode = (autoMode + 1) % 4;
+  Brain.Screen.clearScreen();
+  Brain.Screen.setCursor(2, 2);
+  Brain.Screen.print("Auton: %s", autoModeNames[autoMode]);
+}
+
+void showAutoMode() {
+  Brain.Screen.clearScreen();
+  Brain.Screen.setCursor(2, 2);
+  Brain.Screen.print("Auton: %s", autoModeNames[autoMode]);
+}
 
 motor FL = motor(PORT13, ratio36_1, false);
 motor FR = motor(PORT18, ratio36_1, false);
@@ -125,7 +142,21 @@ void drivePID(double targetDistance, double kP, double kI, double kD) {
   RightMotors.stop(hold);
 }
 
-void autonomous() {
+
+
+
+
+
+// TUNE THESE VALUES:
+// - Distance (inches): How far the robot should move
+// - kP: Proportional gain (increase for faster response, decrease if oscillating)
+// - kI: Integral gain (helps eliminate steady-state error)
+// - kD: Derivative gain (reduces overshoot and oscillation)
+// Example: drivePID(distance, kP, kI, kD)
+
+// Autonomous routines for different starting positions
+
+void autonLeft() {
   drivePID(24.0, 0.25, 0.0001, 0.2);
   wait(500, msec);
   drivePID(-24.0, 0.25, 0.0001, 0.2);
@@ -148,11 +179,102 @@ void autonomous() {
 
 
 
+void autonRight() {
+  drivePID(36.0, 0.25, 0.0001, 0.2);
+  wait(500, msec);
+  drivePID(-12.0, 0.25, 0.0001, 0.2);
+  wait(500, msec);
+  I.spin(forward, 100, percent);
+  I2.spin(forward, 100, percent);
+  wait(800, msec);
+  I.stop();
+  I2.stop();
+  A.spin(forward, 100, percent);
+  wait(800, msec);
+  A.stop(hold);
+  DoubleSolenoid.open();
+  wait(400, msec);
+  DoubleSolenoid.close();
+}
+
+
+
+
+
+void autonLeftCenter() {
+  drivePID(20.0, 0.25, 0.0001, 0.2);
+  wait(450, msec);
+  drivePID(-20.0, 0.25, 0.0001, 0.2);
+  wait(450, msec);
+  I.spin(forward, 100, percent);
+  I2.spin(forward, 100, percent);
+  wait(900, msec);
+  I.stop();
+  I2.stop();
+  A.spin(forward, 100, percent);
+  wait(900, msec);
+  A.stop(hold);
+  DoubleSolenoid.open();
+  wait(450, msec);
+  DoubleSolenoid.close();
+}
+
+
+
+
+
+
+
+void autonRightCenter() {
+  drivePID(30.0, 0.25, 0.0001, 0.2);
+  wait(450, msec);
+  drivePID(-18.0, 0.25, 0.0001, 0.2);
+  wait(450, msec);
+  I.spin(forward, 100, percent);
+  I2.spin(forward, 100, percent);
+  wait(700, msec);
+  I.stop();
+  I2.stop();
+  A.spin(forward, 100, percent);
+  wait(700, msec);
+  A.stop(hold);
+  DoubleSolenoid.open();
+  wait(350, msec);
+  DoubleSolenoid.close();
+}
+
+
+
+
+
+
+
+
+
+void autonomous() {
+  if (autoMode == LEFT) {
+    autonLeft();
+  } else if (autoMode == LEFT_CENTER) {
+    autonLeftCenter();
+  } else if (autoMode == RIGHT_CENTER) {
+    autonRightCenter();
+  } else if (autoMode == RIGHT) {
+    autonRight();
+  }
+}
+
+
+
+
+
+
 
 
 
 
 int main() {
+  Brain.Screen.pressed(onScreenPressed);
+  showAutoMode();
   Competition.autonomous(autonomous);
   while (true) {
     SetDrive();
