@@ -70,12 +70,12 @@ controller Controller = controller(primary);
 
 
 void SetDrive() {
-  int axis1 = Controller.Axis1.position();  // Right joystick X (turn)
-  int axis3 = Controller.Axis3.position();  // Left joystick Y (forward/backward)
-  
+  int axis1 = Controller.Axis3.position();  // Right joystick X (turn)
+  int axis3 = Controller.Axis1.position();  // Left joystick Y (forward/backward)
+
   // Arcade drive: left stick Y for forward/back, right stick X for turn
-  int forward = axis3;
-  int turn = axis1;
+  int forward = -axis3;
+  int turn = -axis1;
   
   // Apply deadzone
   if (abs(forward) < 5) forward = 0;
@@ -85,8 +85,8 @@ void SetDrive() {
   int leftSpeed = forward + turn;
   int rightSpeed = forward - turn;
   
-  LeftMotors.spin(forward, leftSpeed, percentUnits::pct);
-  RightMotors.spin(forward, rightSpeed, percentUnits::pct);
+  LeftMotors.spin(directionType::fwd, leftSpeed, percentUnits::pct);
+  RightMotors.spin(directionType::fwd, rightSpeed, percentUnits::pct);
 }
 
 void SetIntakeAndArm() {
