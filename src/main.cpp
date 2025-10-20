@@ -17,10 +17,13 @@ using namespace vex;
 using signature = vision::signature;
 using code = vision::code;
 
+// Forward declaration of autonomous function
+void autonomous();
+
 competition Competition;
 brain Brain;
+
 // Autonomous mode selection
-enum AutoMode { LEFT = 0, LEFT_CENTER = 1, RIGHT_CENTER = 2, RIGHT = 3 };
 int autoMode = 0;
 const char* autoModeNames[] = {"Left", "Left Center", "Right Center", "Right"};
 
@@ -37,8 +40,8 @@ void showAutoMode() {
   Brain.Screen.print("Auton: %s", autoModeNames[autoMode]);
 }
 
-motor FL = motor(PORT13, ratio36_1, false);
-motor FR = motor(PORT18, ratio36_1, false);
+motor FL = motor(PORT13, ratio36_1, true);
+motor FR = motor(PORT18, ratio36_1, true);
 motor BL = motor(PORT11, ratio36_1, true);
 motor BR = motor(PORT20, ratio36_1, true);
 motor ML = motor(PORT12, ratio36_1, true);
@@ -89,197 +92,48 @@ void SetDrive() {
   RightMotors.spin(directionType::fwd, rightSpeed, percentUnits::pct);
 }
 
-void SetIntakeAndArm() {
-  if (Controller.ButtonA.pressing()) {
+
+void SetIntakeAndArm () {
+  // Set intake
+  if (Controller.ButtonL1.pressing()) {
     I.spin(forward, 100, percentUnits::pct);
     I2.spin(forward, 100, percentUnits::pct);
-  } else if (Controller.ButtonB.pressing()) {
+  } else if (Controller.ButtonL2.pressing()) {
     I.spin(reverse, 100, percentUnits::pct);
     I2.spin(reverse, 100, percentUnits::pct);
   } else {
     I.stop();
     I2.stop();
   }
+  // Loading Intake
+  if (Controller.ButtonR1.pressing()) {
+    I.spin(forward, 100, percentUnits::pct);
+    I2.spin(reverse, 100, percentUnits::pct);
+  } else if (Controller.ButtonR2.pressing()) {
+    I.spin(reverse, 100, percentUnits::pct);
+    I2.spin(forward, 100, percentUnits::pct);
+  } else {
+    I.stop();
+    I2.stop();
+  }
+  
+  // Height scoring
   if (Controller.ButtonX.pressing()) {
     A.spin(forward, 100, percentUnits::pct);
-  } else if (Controller.ButtonY.pressing()) {
-    A.spin(reverse, 100, percentUnits::pct);
-  } else {
     A.stop(hold);
-  }
-
-  if (Controller.ButtonL1.pressing()) {
     DoubleSolenoid.open();
-  } else if (Controller.ButtonL2.pressing()) {
+
+  } else if (Controller.ButtonB.pressing()) {
+    A.spin(forward, 100, percentUnits::pct);
+    A.stop(hold);
+    DoubleSolenoid.close();
+
+  } else if (Controller.ButtonA.pressing()){
+    A.spin(reverse, 100, percentUnits::pct);
+    A.stop(hold);
     DoubleSolenoid.close();
   }
 }
-
-
-
-
-
-
-
-
-void drivePID(double targetDistance, double kP, double kI, double kD) {
-  double error = 0, prevError = 0, integral = 0, derivative = 0;
-  double leftStart = FL.position(degrees);
-  double rightStart = FR.position(degrees);
-  double avgPosition = 0;
-  double targetDegrees = (targetDistance / (4.0 * M_PI)) * 360.0;
-  int maxTime = 3000;
-  int timer = 0;
-  while (timer < maxTime) {
-    double leftPos = FL.position(degrees) - leftStart;
-    double rightPos = FR.position(degrees) - rightStart;
-    avgPosition = (leftPos + rightPos) / 2.0;
-    error = targetDegrees - avgPosition;
-    integral += error;
-    derivative = error - prevError;
-    double output = kP * error + kI * integral + kD * derivative;
-    if (output > 100.0) output = 100.0;
-    if (output < -100.0) output = -100.0;
-    LeftMotors.spin(forward, output, percent);
-    RightMotors.spin(forward, output, percent);
-    prevError = error;
-    if (fabs(error) < 5) break;
-    wait(20, msec);
-    timer += 20;
-  }
-  LeftMotors.stop(hold);
-  RightMotors.stop(hold);
-}
-
-
-
-
-
-
-// TUNE THESE VALUES:
-// - Distance (inches): How far the robot should move
-// - kP: Proportional gain (increase for faster response, decrease if oscillating)
-// - kI: Integral gain (helps eliminate steady-state error)
-// - kD: Derivative gain (reduces overshoot and oscillation)
-// Example: drivePID(distance, kP, kI, kD)
-
-// Autonomous routines for different starting positions
-
-void autonLeft() {
-  drivePID(24.0, 0.25, 0.0001, 0.2);
-  wait(500, msec);
-  drivePID(-24.0, 0.25, 0.0001, 0.2);
-  wait(500, msec);
-  I.spin(forward, 100, percent);
-  I2.spin(forward, 100, percent);
-  wait(1000, msec);
-  I.stop();
-  I2.stop();
-  A.spin(forward, 100, percent);
-  wait(1000, msec);
-  A.stop(hold);
-  DoubleSolenoid.open();
-  wait(500, msec);
-  DoubleSolenoid.close();
-}
-
-
-
-
-
-
-void autonRight() {
-  drivePID(36.0, 0.25, 0.0001, 0.2);
-  wait(500, msec);
-  drivePID(-12.0, 0.25, 0.0001, 0.2);
-  wait(500, msec);
-  I.spin(forward, 100, percent);
-  I2.spin(forward, 100, percent);
-  wait(800, msec);
-  I.stop();
-  I2.stop();
-  A.spin(forward, 100, percent);
-  wait(800, msec);
-  A.stop(hold);
-  DoubleSolenoid.open();
-  wait(400, msec);
-  DoubleSolenoid.close();
-}
-
-
-
-
-
-void autonLeftCenter() {
-  drivePID(20.0, 0.25, 0.0001, 0.2);
-  wait(450, msec);
-  drivePID(-20.0, 0.25, 0.0001, 0.2);
-  wait(450, msec);
-  I.spin(forward, 100, percent);
-  I2.spin(forward, 100, percent);
-  wait(900, msec);
-  I.stop();
-  I2.stop();
-  A.spin(forward, 100, percent);
-  wait(900, msec);
-  A.stop(hold);
-  DoubleSolenoid.open();
-  wait(450, msec);
-  DoubleSolenoid.close();
-}
-
-
-
-
-
-
-
-void autonRightCenter() {
-  drivePID(30.0, 0.25, 0.0001, 0.2);
-  wait(450, msec);
-  drivePID(-18.0, 0.25, 0.0001, 0.2);
-  wait(450, msec);
-  I.spin(forward, 100, percent);
-  I2.spin(forward, 100, percent);
-  wait(700, msec);
-  I.stop();
-  I2.stop();
-  A.spin(forward, 100, percent);
-  wait(700, msec);
-  A.stop(hold);
-  DoubleSolenoid.open();
-  wait(350, msec);
-  DoubleSolenoid.close();
-}
-
-
-
-
-
-
-
-
-
-void autonomous() {
-  if (autoMode == LEFT) {
-    autonLeft();
-  } else if (autoMode == LEFT_CENTER) {
-    autonLeftCenter();
-  } else if (autoMode == RIGHT_CENTER) {
-    autonRightCenter();
-  } else if (autoMode == RIGHT) {
-    autonRight();
-  }
-}
-
-
-
-
-
-
-
-
-
 
 int main() {
   Brain.Screen.pressed(onScreenPressed);
