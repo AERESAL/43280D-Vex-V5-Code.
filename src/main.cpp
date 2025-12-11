@@ -10,9 +10,7 @@
 #include "vex.h"
 #include <cmath>
 
-#ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884197169399375105820974944592307816406286
-#endif
 using namespace vex;
 using signature = vision::signature;
 using code = vision::code;
@@ -51,25 +49,18 @@ motor_group LeftMotors = motor_group(FL, BL, ML);
 motor_group RightMotors = motor_group(FR, BR, MR);
 
 motor I = motor(PORT1, ratio18_1, true);
-motor I2 = motor(PORT2, ratio18_1, true);
+motor convey = motor(PORT2, ratio18_1, true);
 
-motor A = motor(PORT9, ratio36_1, false);
 
 rotation ArmRotation = rotation(PORT10, false);
-pneumatics DoubleSolenoid = pneumatics(Brain.ThreeWirePort.A);
+pneumatics descore = pneumatics(Brain.ThreeWirePort.A);
+pneumatics tongue = pneumatics(Brain.ThreeWirePort.B);
+
 
 inertial Inertial = inertial(PORT15, turnType::right);
 drivetrain Drivetrain = drivetrain(LeftMotors, RightMotors, 12.0, 12.0, 0.0, mm, 1);
 
 controller Controller = controller(primary);
-
-
-
-
-
-
-
-
 
 
 void SetDrive() {
@@ -93,46 +84,19 @@ void SetDrive() {
 }
 
 
-void SetIntakeAndArm () {
-  // Set intake
-  if (Controller.ButtonL1.pressing()) {
-    I.spin(forward, 100, percentUnits::pct);
-    I2.spin(forward, 100, percentUnits::pct);
-  } else if (Controller.ButtonL2.pressing()) {
-    I.spin(reverse, 100, percentUnits::pct);
-    I2.spin(reverse, 100, percentUnits::pct);
-  } else {
-    I.stop();
-    I2.stop();
-  }
-  // Loading Intake
-  if (Controller.ButtonR1.pressing()) {
-    I.spin(forward, 100, percentUnits::pct);
-    I2.spin(reverse, 100, percentUnits::pct);
-  } else if (Controller.ButtonR2.pressing()) {
-    I.spin(reverse, 100, percentUnits::pct);
-    I2.spin(forward, 100, percentUnits::pct);
-  } else {
-    I.stop();
-    I2.stop();
-  }
-  
-  // Height scoring
-  if (Controller.ButtonX.pressing()) {
-    A.spin(forward, 100, percentUnits::pct);
-    A.stop(hold);
-    DoubleSolenoid.open();
+void SetConvey() {
+    if (Controller.ButtonR1.pressing()) {
+        I.spin(forward, 100, percentUnits::pct);
+        convey.spin(forward, 100, percentUnits::pct);
+    } else if (Controller.ButtonR2.pressing()) {
+        I.spin(reverse, 100, percentUnits::pct);
+        convey.spin(reverse, 100, percentUnits::pct);
+    } else {
+        I.stop(brakeType::hold);
+        convey.stop(brakeType::hold);
+    }
 
-  } else if (Controller.ButtonB.pressing()) {
-    A.spin(forward, 100, percentUnits::pct);
-    A.stop(hold);
-    DoubleSolenoid.close();
 
-  } else if (Controller.ButtonA.pressing()){
-    A.spin(reverse, 100, percentUnits::pct);
-    A.stop(hold);
-    DoubleSolenoid.close();
-  }
 }
 
 int main() {
@@ -141,7 +105,7 @@ int main() {
   Competition.autonomous(autonomous);
   while (true) {
     SetDrive();
-    SetIntakeAndArm();
+    SetConvey();
     wait(10, msec);
   }
 }
@@ -150,4 +114,4 @@ int main() {
 
 // Copyright © 2025 43280D. All rights reserved.
 // This code is part of a competitive VEX V5 robotics project.
-// Shared for inspiration only — not for reuse in other teams' competition code.
+// saitrseelam.com
