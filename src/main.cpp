@@ -21,7 +21,29 @@ void autonomous();
 competition Competition;
 brain Brain;
 
-// Autonomous mode selection
+motor FL = motor(PORT13, ratio36_1, true);
+motor FR = motor(PORT18, ratio36_1, true);
+motor BL = motor(PORT11, ratio36_1, true);
+motor BR = motor(PORT20, ratio36_1, true);
+motor ML = motor(PORT12, ratio36_1, true);
+motor MR = motor(PORT19, ratio36_1, true);
+
+motor_group LeftMotors = motor_group(FL, BL, ML);
+motor_group RightMotors = motor_group(FR, BR, MR);
+
+motor I = motor(PORT1, ratio18_1, true);
+motor convey = motor(PORT2, ratio18_1, true);
+
+pneumatics descore = pneumatics(Brain.ThreeWirePort.A);
+pneumatics tongue = pneumatics(Brain.ThreeWirePort.B);
+
+
+drivetrain Drivetrain = drivetrain(LeftMotors, RightMotors, 12.0, 12.0, 0.0, mm, 1);
+controller Controller = controller(primary);
+
+
+
+// Auton Selection
 int autoMode = 0;
 const char* autoModeNames[] = {"Left", "Left Center", "Right Center", "Right"};
 
@@ -38,34 +60,12 @@ void showAutoMode() {
   Brain.Screen.print("Auton: %s", autoModeNames[autoMode]);
 }
 
-motor FL = motor(PORT13, ratio36_1, true);
-motor FR = motor(PORT18, ratio36_1, true);
-motor BL = motor(PORT11, ratio36_1, true);
-motor BR = motor(PORT20, ratio36_1, true);
-motor ML = motor(PORT12, ratio36_1, true);
-motor MR = motor(PORT19, ratio36_1, true);
 
-motor_group LeftMotors = motor_group(FL, BL, ML);
-motor_group RightMotors = motor_group(FR, BR, MR);
-
-motor I = motor(PORT1, ratio18_1, true);
-motor convey = motor(PORT2, ratio18_1, true);
-
-
-rotation ArmRotation = rotation(PORT10, false);
-pneumatics descore = pneumatics(Brain.ThreeWirePort.A);
-pneumatics tongue = pneumatics(Brain.ThreeWirePort.B);
-
-
-inertial Inertial = inertial(PORT15, turnType::right);
-drivetrain Drivetrain = drivetrain(LeftMotors, RightMotors, 12.0, 12.0, 0.0, mm, 1);
-
-controller Controller = controller(primary);
 
 
 void SetDrive() {
-  int axis1 = Controller.Axis3.position();  // Right joystick X (turn)
-  int axis3 = Controller.Axis1.position();  // Left joystick Y (forward/backward)
+  int axis3 = Controller.Axis3.position();  // Right joystick X (turn)
+  int axis1 = Controller.Axis1.position();  // Left joystick Y (forward/backward)
 
   // Arcade drive: left stick Y for forward/back, right stick X for turn
   int forward = -axis3;
@@ -74,7 +74,7 @@ void SetDrive() {
   // Apply deadzone
   if (abs(forward) < 5) forward = 0;
   if (abs(turn) < 5) turn = 0;
-  
+
   // Calculate left and right motor speeds
   int leftSpeed = forward + turn;
   int rightSpeed = forward - turn;
@@ -85,21 +85,24 @@ void SetDrive() {
 
 
 void SetConvey() {
-    if (Controller.ButtonR1.pressing()) {
+    if (Controller.ButtonR1.pressed(buttonPressed)) {
         I.spin(forward, 100, percentUnits::pct);
         convey.spin(forward, 100, percentUnits::pct);
-    } else if (Controller.ButtonR2.pressing()) {
+        Controller.rumble('--');
+    } else if (Controller.ButtonL1.pressed(buttonPressed)) {
         I.spin(reverse, 100, percentUnits::pct);
         convey.spin(reverse, 100, percentUnits::pct);
+        Controller.rumble('..');
     } else {
         I.stop(brakeType::hold);
-        convey.stop(brakeType::hold);
+        convey.stop(brakeType::hold);s
     }
 
 
 }
 
 int main() {
+  vexcodeInit();
   Brain.Screen.pressed(onScreenPressed);
   showAutoMode();
   Competition.autonomous(autonomous);
